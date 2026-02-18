@@ -118,52 +118,77 @@ Legacy code often assumes the first byte of an integer is the most significant. 
 
 ---
 
-## Section 4: Migration Strategies on Azure
+## Section 4: Modernize C++ Code for Azure
 
-There are several approaches, each balancing speed against long-term value.
+This section describes how to refactor a legacy Big-Endian C++ codebase so that it compiles, runs, and scales on Azure x86/x64 infrastructure. The approach focuses on code-level changes rather than infrastructure rehosting or full application rewrites.
 
-### Option 1: Rehost via Hybrid Bridge
+### Architecture
 
-> **TL;DR:** Keep the application running on native IBM Power infrastructure while connecting it to Azure services through a private network.
+The modernization workflow takes the existing C++ source that was compiled with IBM XL C/C++ on a Big-Endian system and produces a portable codebase that compiles with GCC or Clang on Linux x86. The refactored code runs in Linux containers on Azure.
 
-- **How:** Migrate the IBM Power workloads to **IBM Power Virtual Server (PowerVS)** on IBM Cloud, then establish an **Azure ExpressRoute** connection to link PowerVS directly into your Azure virtual network. Alternatively, evaluate ISV partner solutions available through the **Azure Modernization Center** that can emulate or host legacy Power workloads on Azure infrastructure.
-- **Pros:** No code changes. The application continues to run in a Big-Endian environment. Azure services (AI, analytics, storage) are accessible over a private, low-latency backbone.
-- **Cons:** Higher operational cost (maintaining two cloud fabrics). The application remains in a legacy architecture with limited horizontal scaling.
-- **Best For:** Meeting a hard datacenter exit deadline while buying time for a full modernization.
+```
+┌──────────────────────┐         ┌──────────────────────────────────┐
+│  Source Environment  │         │  Target Environment (Azure)      │
+│                      │         │                                  │
+│  IBM Power (OS/400)  │  ───►   │  Linux x86 Container on AKS     │
+│  IBM XL C/C++        │  code   │  GCC / Clang (C++20)             │
+│  Big-Endian          │  refactor│  Little-Endian                   │
+│  EBCDIC              │         │  UTF-8                           │
+└──────────────────────┘         └──────────────────────────────────┘
+```
 
-### Option 2: Replatform ("Lift, Tinker, and Shift")
+### Dataflow
 
-> **TL;DR:** Recompile the C++ code for Linux x86 with minimal architectural changes.
+1. **Inventory.** Identify all C++ source files that perform binary I/O, pointer arithmetic on multi-byte integers, or use IBM XL C++ extensions.
+2. **Refactor endianness.** Insert portable byte-swap utilities (`std::byteswap` in C++23, or compiler intrinsics such as `__builtin_bswap32`) at every point where the code reads or writes multi-byte binary data. Use `if constexpr (std::endian::native == std::endian::little)` so the swap is resolved at compile time with zero runtime cost.
+3. **Replace OS/400 APIs.** Substitute IBM-specific system calls (Data Queues, User Spaces, Message Queues, record-level file access) with POSIX equivalents or standard C++ libraries.
+4. **Convert text encoding.** Translate EBCDIC literals and data streams to UTF-8 using `iconv` or an equivalent library.
+5. **Recompile.** Build the codebase with GCC or Clang using `-std=c++20` (or later) and run the test suite on an x86 Linux target.
+6. **Containerize.** Package the compiled application into a Linux container image and push it to Azure Container Registry.
+7. **Deploy.** Deploy the container to Azure Kubernetes Service (AKS) for horizontal scaling, or to Azure Virtual Machines for a single-partition replacement.
 
-- **How:** Move the application to **Azure Virtual Machines** running Linux. Recompile the C++ codebase with GCC or Clang, fixing endianness issues and replacing OS/400-specific APIs with POSIX equivalents. The application architecture remains largely monolithic.
-- **Pros:** Reduced operational overhead (standard Linux VMs instead of specialized Power hardware). Familiar deployment model.
-- **Cons:** Requires endianness refactoring and OS API replacement. Does not unlock horizontal scaling.
-- **Best For:** Teams that want to exit the Power platform quickly without redesigning the application architecture.
+### Components
 
-### Option 3: Modernize / Refactor
+- [Azure Kubernetes Service (AKS)](https://learn.microsoft.com/azure/aks/) hosts the containerized C++ application and provides horizontal scaling, rolling updates, and self-healing.
+- [Azure Virtual Machines](https://learn.microsoft.com/azure/virtual-machines/) provides an alternative deployment target when a single-VM model is sufficient.
+- [Azure Container Registry](https://learn.microsoft.com/azure/container-registry/) stores and manages the container images built from the refactored C++ code.
+- [Azure Monitor](https://learn.microsoft.com/azure/azure-monitor/) and [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) provide observability for the deployed application.
+- [GitHub Copilot](https://docs.github.com/copilot) accelerates the refactoring process by identifying endianness-sensitive code patterns and generating portable replacements.
+- [GitHub Actions](https://docs.github.com/actions) automates CI/CD pipelines that build, test, and deploy the refactored containers.
 
-> **TL;DR:** Modify the application's code to leverage cloud-native features.
+### Considerations
 
-- **How:** Recompile C++ for Linux containers. Deploy to Azure Kubernetes Service (AKS). Use GitHub Copilot to handle Endianness refactoring.
-- **Pros:** Unlocks horizontal scaling, AI integration, and modern DevOps pipelines.
-- **Cons:** Requires significant engineering effort and testing.
-- **Best For:** Long-term strategic value, performance optimization, and AI readiness.
+These considerations implement the pillars of the [Azure Well-Architected Framework](https://learn.microsoft.com/azure/well-architected/).
 
-### Option 4: Rearchitect / Rebuild
+#### Reliability
 
-> **TL;DR:** Build a new, cloud-native solution from scratch.
+- Deploy the AKS cluster across multiple availability zones to protect against zone-level failures.
+- Use liveness and readiness probes so that AKS can restart unhealthy containers automatically.
+- Store application state externally (for example, in Azure Cache for Redis) so that any pod replica can serve any request.
 
-- **How:** Redesign the application using serverless (Azure Functions) or microservices.
-- **Pros:** Maximum cloud-native benefit.
-- **Cons:** Highest cost and timeline. Impractical for large, mature codebases.
-- **Best For:** Specific sub-services or APIs rather than the entire legacy stack.
+#### Security
 
-### Recommended Approach: The Phased Hybrid
+- Use [Azure Bastion](https://learn.microsoft.com/azure/bastion/) for administrative access to VMs, minimizing open ports.
+- Store secrets and connection strings in [Azure Key Vault](https://learn.microsoft.com/azure/key-vault/) rather than in configuration files.
+- For payment or PII workloads, consider [DC-series confidential VMs](https://learn.microsoft.com/azure/confidential-computing/) with Intel SGX or AMD SEV-SNP.
 
-For most engagements of this type, a **two-phase approach** is recommended:
+#### Cost Optimization
 
-1.  **Phase 1 — Bridge:** Move the IBM Power workloads to IBM PowerVS and connect them to Azure via ExpressRoute. This retires the physical datacenter while keeping the application logic intact. Simultaneously, begin recompiling non-critical C++ modules for Linux x86 on Azure Virtual Machines.
-2.  **Phase 2 — Modernize:** Systematically refactor critical APIs and business logic into AKS using GitHub Copilot, addressing Endianness and unlocking AI and analytics capabilities. As each service is validated on Azure, decommission its PowerVS counterpart until the bridge is fully retired.
+- Right-size compute by load-testing the refactored application. Start with D-series (Dv5) for balanced workloads or F-series (Fsv2) for CPU-bound transaction processing.
+- Use the AKS cluster autoscaler so that you pay only for the capacity you need during peak and off-peak hours.
+- Use the [Azure pricing calculator](https://azure.microsoft.com/pricing/calculator/) to estimate costs for your target configuration.
+
+#### Operational Excellence
+
+- Adopt a CI/CD pipeline with GitHub Actions that compiles on x86, runs unit and integration tests, builds the container, and deploys to AKS.
+- Use Infrastructure as Code (Bicep or Terraform) to provision and manage the Azure resources.
+- Tag each container image with the Git commit SHA so that every deployment is traceable.
+
+#### Performance Efficiency
+
+- The `if constexpr` byte-swap pattern compiles to native swap instructions with zero branch overhead on x86.
+- Use `static_assert` on struct sizes to guarantee that compiler padding has not changed the binary layout.
+- Benchmark the refactored application against the original Power Systems baseline to validate latency requirements.
 
 ---
 
@@ -320,7 +345,7 @@ At the start of any assessment meeting, ask these five questions to surface hidd
 
 ## Conclusion
 
-Migrating legacy Big-Endian C++ workloads to Azure is a complex engineering challenge that requires a deep understanding of computer architecture. However, by choosing the right migration strategy—whether a rapid rehost or a strategic modernization—organizations can successfully retire aging datacenters.
+Modernizing legacy Big-Endian C++ workloads for Azure is a complex engineering challenge that requires a deep understanding of computer architecture. By systematically refactoring endianness-sensitive code, replacing platform-specific APIs, and deploying to cloud-native infrastructure, organizations can retire aging datacenters while unlocking horizontal scaling and modern DevOps capabilities.
 
 By leveraging tools like **GitHub Copilot** to handle complex refactoring, these legacy C++ codebases are not just preserved—they are transformed into modern, portable applications ready to leverage the full potential of cloud-scale compute, AI, and analytics.
 
