@@ -119,7 +119,9 @@ void processTxn(const char* rawBuffer) {
     std::cout << "Amount ($) : " << txn.amountCents / 100.0 << "\n";
     std::cout << "Store      : " << txn.storeNumber  << "\n";
     std::cout << "Pump       : " << txn.pumpNumber   << "\n";
-    std::cout << "Card       : " << txn.cardType     << "\n";
+    std::cout << "Card       : ";
+    std::cout.write(txn.cardType, sizeof(txn.cardType));
+    std::cout << "\n";
 }
 
 int main() {
@@ -246,7 +248,9 @@ void processTxn(const char* rawBuffer) {
     std::cout << "Amount ($) : " << txn.amountCents / 100.0 << "\n";
     std::cout << "Store      : " << txn.storeNumber  << "\n";
     std::cout << "Pump       : " << txn.pumpNumber   << "\n";
-    std::cout << "Card       : " << txn.cardType     << "\n";
+    std::cout << "Card       : ";
+    std::cout.write(txn.cardType, sizeof(txn.cardType));
+    std::cout << "\n";
 }
 
 int main() {

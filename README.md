@@ -85,7 +85,7 @@ Card       : VISA
 
 | Document | Description |
 |---|---|
-| [Architecture Guide](docs/blog-post.md) | C++ code modernization workflow, Azure deployment components, Well-Architected considerations, and assessment checklist. |
+| [Architecture Guide](docs/blog-post.md) | Endianness, architecture differences, C++ modernization workflow, Azure deployment options, Well-Architected considerations, and assessment checklist. |
 | [Copilot Modernization Guide](docs/copilot-modernization-guide.md) | Problem statement, the Copilot prompt, before/after code walkthrough, and gotchas (COMP-3, EBCDIC, struct padding). |
 | [Copilot Prompts](docs/copilot-prompts.md) | Copy-paste prompts for endianness refactoring, code explanation, and EBCDIC-to-UTF-8. |
 

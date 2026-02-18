@@ -151,10 +151,24 @@ The modernization workflow takes the existing C++ source that was compiled with 
 
 - [Azure Kubernetes Service (AKS)](https://learn.microsoft.com/azure/aks/) hosts the containerized C++ application and provides horizontal scaling, rolling updates, and self-healing.
 - [Azure Virtual Machines](https://learn.microsoft.com/azure/virtual-machines/) provides an alternative deployment target when a single-VM model is sufficient.
+- [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/) runs event-driven workloads or APIs without managing Kubernetes infrastructure.
 - [Azure Container Registry](https://learn.microsoft.com/azure/container-registry/) stores and manages the container images built from the refactored C++ code.
 - [Azure Monitor](https://learn.microsoft.com/azure/azure-monitor/) and [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) provide observability for the deployed application.
 - [GitHub Copilot](https://docs.github.com/copilot) accelerates the refactoring process by identifying endianness-sensitive code patterns and generating portable replacements.
 - [GitHub Actions](https://docs.github.com/actions) automates CI/CD pipelines that build, test, and deploy the refactored containers.
+
+### Deployment options
+
+Choose a deployment model based on your scalability and operational requirements:
+
+| Deployment Model | Azure Service | Best For |
+|---|---|---|
+| **Single VM** | Azure Virtual Machines (Dv5 / Fsv2) | Direct replacement of the Power partition. Simplest path. |
+| **Containers** | Azure Kubernetes Service (AKS) | Horizontal scaling, rolling updates, and microservice decomposition. |
+| **Serverless Containers** | Azure Container Apps | Event-driven workloads or APIs without managing Kubernetes infrastructure. |
+| **Platform as a Service** | Azure App Service (Linux) | Web-facing APIs with built-in TLS, autoscaling, and deployment slots. |
+
+For a high-volume transaction system, **AKS** provides the best balance of performance, scalability, and operational control.
 
 ### Considerations
 
@@ -174,7 +188,15 @@ These considerations implement the pillars of the [Azure Well-Architected Framew
 
 #### Cost Optimization
 
-- Right-size compute by load-testing the refactored application. Start with D-series (Dv5) for balanced workloads or F-series (Fsv2) for CPU-bound transaction processing.
+- Right-size compute by load-testing the refactored application. Use the following mapping when sizing Azure infrastructure to match Power Systems performance:
+
+  | Power Systems Feature | Recommended Azure VM Series | Rationale |
+  |---|---|---|
+  | High Memory per Core | **E-Series (Ev5)** | Optimized for memory-intensive workloads such as large caches. |
+  | High Compute Speed | **F-Series (Fsv2)** | High clock speeds for CPU-bound transaction processing logic. |
+  | General Purpose | **D-Series (Dv5)** | Balanced CPU/Memory for API handlers and web-tier services. |
+  | Hardware Encryption | **DC-Series** | Confidential Computing with Intel SGX or AMD SEV-SNP. |
+
 - Use the AKS cluster autoscaler so that you pay only for the capacity you need during peak and off-peak hours.
 - Use the [Azure pricing calculator](https://azure.microsoft.com/pricing/calculator/) to estimate costs for your target configuration.
 
@@ -296,42 +318,7 @@ Card       : VISA
 
 ---
 
-## Section 6: Deploying Modernized C++ on Azure
-
-Once the C++ code has been refactored for x86 and compiles cleanly on Linux, the next decision is **where and how to run it** on Azure.
-
-### Azure VM Performance Mapping
-
-When sizing Azure infrastructure to match Power Systems performance:
-
-| Power Systems Feature | Recommended Azure VM Series | Rationale |
-|---|---|---|
-| High Memory per Core | **E-Series (Ev5)** | Optimized for memory-intensive workloads like large caches and database operations. |
-| High Compute Speed | **F-Series (Fsv2)** | High clock speeds for CPU-bound transaction processing logic. |
-| General Purpose | **D-Series (Dv5)** | Balanced CPU/Memory for API handlers and web-tier services. |
-| Hardware Encryption | **DC-Series** | Confidential Computing with Intel SGX or AMD SEV-SNP for secure payment processing. |
-
-### Deployment Options
-
-Once the application compiles and passes tests on x86 Linux, choose a deployment model based on your scalability and operational requirements:
-
-| Deployment Model | Azure Service | Best For |
-|---|---|---|
-| **Single VM** | Azure Virtual Machines (Dv5 / Fsv2) | Direct replacement of the Power partition. Simplest path. |
-| **Containers** | Azure Kubernetes Service (AKS) | Horizontal scaling, rolling updates, and microservice decomposition. |
-| **Serverless Containers** | Azure Container Apps | Event-driven workloads or APIs without managing Kubernetes infrastructure. |
-| **Platform as a Service** | Azure App Service (Linux) | Web-facing APIs with built-in TLS, autoscaling, and deployment slots. |
-
-For a high-volume transaction system, **AKS** provides the best balance of performance, scalability, and operational control. It allows you to:
-
--   Scale individual C++ services independently based on transaction load.
--   Deploy updates with zero-downtime rolling releases.
--   Integrate with **Azure Monitor** and **Azure Application Insights** for observability.
--   Use **GitHub Actions** for CI/CD pipelines that build, test, and deploy the refactored C++ containers.
-
----
-
-## Section 7: Assessment Checklist
+## Section 6: Assessment Checklist
 
 Before beginning any migration, conduct a technical discovery. The following checklist should be completed by the application owner.
 
@@ -357,7 +344,7 @@ Before beginning any migration, conduct a technical discovery. The following che
 
 ---
 
-## Section 8: The 5 Discovery Questions
+## Section 7: The 5 Discovery Questions
 
 At the start of any assessment meeting, ask these five questions to surface hidden risks early:
 
