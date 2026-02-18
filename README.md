@@ -13,7 +13,7 @@ C++ code written for IBM Power (OS/400, IBM i) stores multi-byte integers in **B
 ├── LICENSE
 ├── README.md
 ├── docs/
-│   ├── blog-post.md                     # Architecture guide: migration strategies
+│   ├── modernizing-big-endian-cpp-for-azure.md   # Solution guide
 │   ├── copilot-modernization-guide.md   # Step-by-step Copilot refactoring walkthrough
 │   └── copilot-prompts.md               # Ready-to-use GitHub Copilot prompts
 └── src/
@@ -85,7 +85,7 @@ Card       : VISA
 
 | Document | Description |
 |---|---|
-| [Architecture Guide](docs/blog-post.md) | Endianness, architecture differences, C++ modernization workflow, Azure deployment options, Well-Architected considerations, and assessment checklist. |
+| [Solution Guide](docs/modernizing-big-endian-cpp-for-azure.md) | Endianness, architecture differences, C++ modernization workflow, Azure deployment options, Well-Architected considerations, and assessment checklist. |
 | [Copilot Modernization Guide](docs/copilot-modernization-guide.md) | Problem statement, the Copilot prompt, before/after code walkthrough, and gotchas (COMP-3, EBCDIC, struct padding). |
 | [Copilot Prompts](docs/copilot-prompts.md) | Copy-paste prompts for endianness refactoring, code explanation, and EBCDIC-to-UTF-8. |
 
