@@ -13,12 +13,12 @@ C++ code written for IBM Power (OS/400, IBM i) stores multi-byte integers in **B
 ├── LICENSE
 ├── README.md
 ├── docs/
-│   ├── modernizing-big-endian-cpp-for-azure.md   # Solution guide
-│   ├── copilot-modernization-guide.md   # Step-by-step Copilot refactoring walkthrough
-│   └── copilot-prompts.md               # Ready-to-use GitHub Copilot prompts
+│   ├── modernizing-big-endian-cpp-for-azure.md  # Solution guide
+│   ├── copilot-modernization-guide.md           # Step-by-step Copilot walkthrough
+│   └── copilot-prompts.md                       # Ready-to-use Copilot prompts
 └── src/
-    ├── pos_transaction.cpp              # BEFORE — legacy OS/400 code (buggy on x86)
-    └── pos_transaction_x86.cpp          # AFTER  — Copilot-assisted portable code
+    ├── pos_transaction.cpp                      # BEFORE — legacy OS/400 (buggy on x86)
+    └── pos_transaction_x86.cpp                  # AFTER  — portable code (correct)
 ```
 
 ## Quick Start
