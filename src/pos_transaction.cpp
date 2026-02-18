@@ -13,7 +13,7 @@
 #include <cstdint>
 
 // ---------------------------------------------------------------------------
-// TxnRecord: Fixed-format binary record from a DB2 Physical File.
+// TxnRecord: Fixed-format binary record from a legacy flat file.
 //
 // On the OS/400, this struct is overlaid directly onto raw record buffers
 // using memcpy. The byte order of the buffer (Big-Endian) matches the CPU's
@@ -43,7 +43,7 @@ void processTxn(const char* rawBuffer) {
     TxnRecord txn;
 
     // Direct memory copy — NO byte-order conversion.
-    // This is the standard OS/400 pattern for reading DB2 record buffers.
+    // This is the standard OS/400 pattern for reading binary record buffers.
     std::memcpy(&txn, rawBuffer, sizeof(TxnRecord));
 
     std::cout << "Txn ID     : " << txn.txnId       << "\n";
@@ -57,7 +57,7 @@ void processTxn(const char* rawBuffer) {
 
 int main() {
     // Simulated Big-Endian binary buffer, as it would arrive from an
-    // iSeries DB2 Physical File or Data Queue export:
+    // iSeries flat file or Data Queue export:
     //
     //   txnId       =    1  →  00 00 00 01
     //   amountCents = 5000  →  00 00 13 88

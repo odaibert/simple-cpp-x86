@@ -38,7 +38,7 @@ characteristics directly:
   `memcpy` and then uses the integer fields will produce garbage on x86.
 
 - **Memory-mapped structures:** OS/400 programs frequently overlay structs
-  directly onto raw buffers from DB2 record-level access or Data Queues.
+  directly onto raw buffers from record-level file access or Data Queues.
   These patterns assume the CPU's native byte order matches the data.
 
 - **System APIs:** OS/400 provides unique IPC mechanisms (Message Queues,
@@ -99,7 +99,7 @@ the fields directly.
 #include <cstring>
 #include <cstdint>
 
-// Fixed-format binary record from a DB2 Physical File
+// Fixed-format binary record from a legacy flat file
 struct TxnRecord {
     uint32_t txnId;          // Transaction ID
     uint32_t amountCents;    // Amount in cents (e.g., 5000 = $50.00)
@@ -369,8 +369,8 @@ g++ -std=c++20 -o pos_modern src/pos_transaction_x86.cpp
 8. **GitHub.** "GitHub Copilot documentation."
    [https://docs.github.com/copilot](https://docs.github.com/copilot)
 
-9. **Microsoft Learn.** "Azure SQL Managed Instance documentation."
-   [https://learn.microsoft.com/azure/azure-sql/managed-instance/](https://learn.microsoft.com/azure/azure-sql/managed-instance/)
+9. **Microsoft Learn.** "Azure Virtual Machines documentation."
+   [https://learn.microsoft.com/azure/virtual-machines/](https://learn.microsoft.com/azure/virtual-machines/)
 
 10. **cppreference.com.** "`std::endian` (C++20)."
     [https://en.cppreference.com/w/cpp/types/endian](https://en.cppreference.com/w/cpp/types/endian)

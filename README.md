@@ -87,7 +87,7 @@ Card       : VISA
 |---|---|
 | [Architecture Guide](docs/blog-post.md) | Migration strategies, assessment checklist, Azure VM sizing, and the phased hybrid approach. |
 | [Copilot Modernization Guide](docs/copilot-modernization-guide.md) | Problem statement, the Copilot prompt, before/after code walkthrough, and gotchas (COMP-3, EBCDIC, struct padding). |
-| [Copilot Prompts](docs/copilot-prompts.md) | Copy-paste prompts for endianness refactoring, code explanation, DB2-to-T-SQL conversion, and EBCDIC-to-UTF-8. |
+| [Copilot Prompts](docs/copilot-prompts.md) | Copy-paste prompts for endianness refactoring, code explanation, and EBCDIC-to-UTF-8. |
 
 ## References
 

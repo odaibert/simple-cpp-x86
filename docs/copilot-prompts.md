@@ -66,25 +66,7 @@ Requirements:
 
 ---
 
-## Prompt 4: DB2 Stored Procedure Conversion
-
-> For migrating stored procedures from DB2 to Azure SQL Managed Instance.
-
-```
-Convert the following DB2 SQL PL stored procedure to T-SQL compatible with
-Azure SQL Managed Instance.
-
-Key differences to handle:
-1. Replace DB2-specific date/time functions with T-SQL equivalents.
-2. Convert SIGNAL SQLSTATE to THROW or RAISERROR.
-3. Replace FETCH with CURSOR patterns compatible with SQL Server.
-4. Map DB2 data types to SQL Server equivalents (e.g., DECFLOAT -> DECIMAL).
-5. Preserve transactional semantics and isolation levels.
-```
-
----
-
-## Prompt 5: EBCDIC to UTF-8 Conversion
+## Prompt 4: EBCDIC to UTF-8 Conversion
 
 > For handling text encoding differences between IBM i and Azure.
 

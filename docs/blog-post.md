@@ -13,11 +13,11 @@ This guide walks through the architectural considerations and practical strategi
 An organization relies on a custom-built C++ application running on IBM Power hardware (with an operating system such as IBM i / OS/400). The system:
 
 - Handles **high-volume, real-time transactions** (e.g., Point-of-Sale).
-- Uses **DB2 stored procedures** for approximately 30% of its business logic.
-- Has dependencies on **on-premises Oracle databases**.
+- Contains a large, mature C++ codebase compiled with IBM XL C/C++.
+- Uses OS/400-specific system APIs and IPC mechanisms.
 - Must maintain **sub-millisecond latency** for customer-facing operations.
 
-The goal is to **retire the physical datacenter** while maintaining performance and unlocking modern cloud capabilities such as AI and analytics.
+The goal is to **retire the physical datacenter** by migrating the C++ application to Azure, while maintaining performance and unlocking modern cloud capabilities such as AI and analytics.
 
 ---
 
@@ -93,7 +93,7 @@ A successful migration requires recognizing the distinct characteristics of the 
 | **Category** | The Platform (OS + DB + Runtime) | The Processor (Latest Gen) | The "Big Iron" (Enterprise Scale) | Commodity Hardware (Cloud Standard) |
 | **Endianness** | Big-Endian | Big-Endian | Big-Endian | Little-Endian |
 | **Architecture** | RISC (Power-based) | RISC (Power-based) | CISC (Proprietary) | CISC (Universal) |
-| **Best For** | Integrated business logic & DB2 | High-performance enterprise workloads | Massive transaction volume (10B+/day) | General purpose, Cloud, and Web apps |
+| **Best For** | Integrated business logic | High-performance enterprise workloads | Massive transaction volume (10B+/day) | General purpose, Cloud, and Web apps |
 | **Scaling** | Vertical | Vertical | Vertical (near-infinite redundancy) | Horizontal |
 
 ---
@@ -133,12 +133,12 @@ There are several approaches, each balancing speed against long-term value.
 
 ### Option 2: Replatform ("Lift, Tinker, and Shift")
 
-> **TL;DR:** Move to a managed service (PaaS) with minimal code changes.
+> **TL;DR:** Recompile the C++ code for Linux x86 with minimal architectural changes.
 
-- **How:** Swap the underlying platform (e.g., move DB2 to Azure SQL Managed Instance) while keeping the application logic largely intact.
-- **Pros:** Reduced operational overhead (no more OS patching). Lower cost than rehosting.
-- **Cons:** Requires database conversion effort.
-- **Best For:** Reducing operational burden without a full application rewrite.
+- **How:** Move the application to **Azure Virtual Machines** running Linux. Recompile the C++ codebase with GCC or Clang, fixing endianness issues and replacing OS/400-specific APIs with POSIX equivalents. The application architecture remains largely monolithic.
+- **Pros:** Reduced operational overhead (standard Linux VMs instead of specialized Power hardware). Familiar deployment model.
+- **Cons:** Requires endianness refactoring and OS API replacement. Does not unlock horizontal scaling.
+- **Best For:** Teams that want to exit the Power platform quickly without redesigning the application architecture.
 
 ### Option 3: Modernize / Refactor
 
@@ -241,25 +241,9 @@ void processBuffer(char* rawInput) {
 
 ---
 
-## Section 6: Database and Connectivity Considerations
+## Section 6: Deploying Modernized C++ on Azure
 
-### Converting Stored Procedures
-
-Business logic in DB2 stored procedures should be assessed for migration to **Azure SQL Managed Instance**. The recommended tooling:
-
--   **SQL Server Migration Assistant (SSMA) for DB2** automates schema and simpler procedural logic conversion to T-SQL.
--   Complex stored procedures (especially those calling external programs like RPG or COBOL) may require manual refactoring or moving the logic into the C++ application tier.
-
-### Key Risk: Packed Decimals (COMP-3)
-
-IBM systems use a specific format called **Packed Decimal** where two digits are stored in a single byte. This is neither Big-Endian nor Little-Endian—it is a proprietary encoding that requires a dedicated parser during migration.
-
-### Managing Latency for Hybrid Dependencies
-
-If the application maintains connectivity to external on-premises databases (e.g., Oracle), network latency can degrade performance.
-
--   **Azure ExpressRoute** provides a private, dedicated network connection between on-premises infrastructure and Azure.
--   **Oracle Database@Azure** co-locates Oracle hardware directly within Azure regions, providing sub-2ms latency between compute and data.
+Once the C++ code has been refactored for x86 and compiles cleanly on Linux, the next decision is **where and how to run it** on Azure.
 
 ### Azure VM Performance Mapping
 
@@ -271,6 +255,24 @@ When sizing Azure infrastructure to match Power Systems performance:
 | High Compute Speed | **F-Series (Fsv2)** | High clock speeds for CPU-bound transaction processing logic. |
 | General Purpose | **D-Series (Dv5)** | Balanced CPU/Memory for API handlers and web-tier services. |
 | Hardware Encryption | **DC-Series** | Confidential Computing with Intel SGX or AMD SEV-SNP for secure payment processing. |
+
+### Deployment Options
+
+Once the application compiles and passes tests on x86 Linux, choose a deployment model based on your scalability and operational requirements:
+
+| Deployment Model | Azure Service | Best For |
+|---|---|---|
+| **Single VM** | Azure Virtual Machines (Dv5 / Fsv2) | Direct replacement of the Power partition. Simplest path. |
+| **Containers** | Azure Kubernetes Service (AKS) | Horizontal scaling, rolling updates, and microservice decomposition. |
+| **Serverless Containers** | Azure Container Apps | Event-driven workloads or APIs without managing Kubernetes infrastructure. |
+| **Platform as a Service** | Azure App Service (Linux) | Web-facing APIs with built-in TLS, autoscaling, and deployment slots. |
+
+For a high-volume transaction system, **AKS** provides the best balance of performance, scalability, and operational control. It allows you to:
+
+-   Scale individual C++ services independently based on transaction load.
+-   Deploy updates with zero-downtime rolling releases.
+-   Integrate with **Azure Monitor** and **Azure Application Insights** for observability.
+-   Use **GitHub Actions** for CI/CD pipelines that build, test, and deploy the refactored C++ containers.
 
 ---
 
@@ -285,18 +287,18 @@ Before beginning any migration, conduct a technical discovery. The following che
 - [ ] Does the application use native OS/400 IPC mechanisms (Message Queues, Data Queues)?
 - [ ] List all third-party or IBM-native libraries used for encryption, networking, or hardware interfacing.
 
-### II. Database & Stored Procedure Analysis
+### II. Build & Runtime Environment
 
-- [ ] Are stored procedures written in SQL PL, or do they call external programs (RPG/COBOL)?
-- [ ] Are there GRAPHIC, VARGRAPHIC, or BLOB data types requiring specific mapping?
-- [ ] What is the peak transaction rate (TPS) the database must sustain?
-- [ ] Does the logic rely on specific DB2 isolation levels (e.g., Repeatable Read)?
+- [ ] What compiler version and flags are currently used (IBM XL C++, optimization level)?
+- [ ] What is the target C++ standard (C++11, C++14, C++17, C++20)?
+- [ ] What is the peak transaction rate (TPS) the application must sustain?
+- [ ] Are there hardware-specific dependencies (e.g., crypto accelerators, specialized I/O)?
 
 ### III. Integration & Connectivity
 
-- [ ] Is the external database (e.g., Oracle) used solely by this application, or is it shared?
 - [ ] How does the application interface with physical peripherals (Serial-over-IP, IoT Gateways)?
 - [ ] How is user identity managed (Local OS/400 profiles, LDAP, Active Directory)?
+- [ ] What network protocols does the application use (TCP sockets, MQ, proprietary)?
 
 ---
 
@@ -308,9 +310,9 @@ At the start of any assessment meeting, ask these five questions to surface hidd
 
 2.  **Endianness Exposure:** "How heavily does the C++ codebase rely on raw memory manipulation, binary file I/O, or pointer arithmetic that assumes a Big-Endian architecture?"
 
-3.  **Stored Procedure Weight:** "Of the logic residing in stored procedures, how much is purely data retrieval versus complex business logic that might be better suited for a middle-tier service?"
+3.  **OS/400 API Surface:** "How heavily does the code depend on OS/400-specific system APIs (Data Queues, User Spaces, Message Queues, record-level file access)? Can these be replaced with POSIX equivalents or standard C++ libraries?"
 
-4.  **Dependency Mapping:** "What is the 'hard dependency' list for on-premises databases? Are they shared by other systems not included in this migration, or can they move as a single unit?"
+4.  **Build & Toolchain:** "What compiler, flags, and C++ standard level is the codebase currently using? Are there IBM XL C++ extensions or pragmas that would need to be removed for GCC/Clang?"
 
 5.  **Success Criteria:** "When this migration is complete, what defines success? Is it purely a datacenter exit, or are there specific performance, scalability, or AI-readiness goals?"
 
@@ -320,17 +322,18 @@ At the start of any assessment meeting, ask these five questions to surface hidd
 
 Migrating legacy Big-Endian C++ workloads to Azure is a complex engineering challenge that requires a deep understanding of computer architecture. However, by choosing the right migration strategy—whether a rapid rehost or a strategic modernization—organizations can successfully retire aging datacenters.
 
-By leveraging tools like **GitHub Copilot** to handle complex refactoring and adopting managed cloud databases, these legacy systems are not just preserved—they are transformed into modern platforms ready to leverage the full potential of cloud-scale AI and analytics.
+By leveraging tools like **GitHub Copilot** to handle complex refactoring, these legacy C++ codebases are not just preserved—they are transformed into modern, portable applications ready to leverage the full potential of cloud-scale compute, AI, and analytics.
 
 ---
 
 ## Additional Resources
 
+-   [C++ Language Documentation — Microsoft Learn](https://learn.microsoft.com/cpp/cpp/)
+-   [Porting and Upgrading C++ Code — Microsoft Learn](https://learn.microsoft.com/cpp/porting/visual-cpp-porting-and-upgrading-guide)
 -   [Azure Kubernetes Service (AKS) documentation](https://learn.microsoft.com/azure/aks/)
--   [Azure SQL Managed Instance documentation](https://learn.microsoft.com/azure/azure-sql/managed-instance/)
--   [SQL Server Migration Assistant for DB2](https://learn.microsoft.com/sql/ssma/db2/sql-server-migration-assistant-for-db2-db2tosql)
--   [Oracle Database@Azure](https://learn.microsoft.com/azure/oracle/oracle-db/)
+-   [Azure Virtual Machines documentation](https://learn.microsoft.com/azure/virtual-machines/)
+-   [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps/)
 -   [GitHub Copilot documentation](https://docs.github.com/copilot)
--   [Azure Modernization Center](https://learn.microsoft.com/azure/cloud-adoption-framework/modernize/)
--   [IBM Power Virtual Server](https://www.ibm.com/products/power-virtual-server)
--   [Azure ExpressRoute documentation](https://learn.microsoft.com/azure/expressroute/)
+-   [Cloud Adoption Framework — Modernize](https://learn.microsoft.com/azure/cloud-adoption-framework/modernize/)
+-   [`std::endian` (C++20) — cppreference](https://en.cppreference.com/w/cpp/types/endian)
+-   [`std::byteswap` (C++23) — cppreference](https://en.cppreference.com/w/cpp/numeric/byteswap)

@@ -2,7 +2,7 @@
 // Generated with assistance from GitHub Copilot
 //
 // This is the REFACTORED version of pos_transaction.cpp. It correctly reads
-// Big-Endian binary data (from a legacy OS/400 DB2 export) on an x86 host.
+// Big-Endian binary data (from a legacy OS/400 flat file) on an x86 host.
 //
 // Compile:  g++ -std=c++20 -o pos_modern pos_transaction_x86.cpp
 // Run:      ./pos_modern
@@ -66,7 +66,7 @@ inline uint16_t fromBigEndian16(uint16_t v) {
 // TxnRecord: UNCHANGED struct layout.
 //
 // The binary format is identical to the OS/400 version. This is critical:
-// it means existing data files, network packets, and DB2 exports remain
+// it means existing data files, network packets, and legacy exports remain
 // compatible without any reformatting.
 // ---------------------------------------------------------------------------
 struct TxnRecord {
