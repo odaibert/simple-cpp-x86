@@ -2,6 +2,8 @@
 
 A practical guide and working code examples for migrating C++ applications from IBM Power Systems (Big-Endian) to x86/x64 Linux on Azure (Little-Endian), using GitHub Copilot to accelerate the refactoring.
 
+![Code refactor architecture diagram](images/Code-refactor-diagram.jpg)
+
 ## The Problem
 
 C++ code written for IBM Power (OS/400, IBM i) stores multi-byte integers in **Big-Endian** byte order. When that code is recompiled for **x86** (Little-Endian) — the architecture behind Azure Virtual Machines — every raw `memcpy` into a struct produces **silently wrong values**. This repository demonstrates the bug and its fix.

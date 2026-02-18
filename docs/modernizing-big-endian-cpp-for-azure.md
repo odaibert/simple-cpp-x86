@@ -1,4 +1,4 @@
-# Solution Guide: Modernizing Big-Endian C++ Workloads for Azure
+~# Solution Guide: Modernizing Big-Endian C++ Workloads for Azure
 
 ## Overview
 
@@ -126,16 +126,7 @@ This section describes how to refactor a legacy Big-Endian C++ codebase so that 
 
 The modernization workflow takes the existing C++ source that was compiled with IBM XL C/C++ on a Big-Endian system and produces a portable codebase that compiles with GCC or Clang on Linux x86. The refactored code runs in Linux containers on Azure.
 
-```
-┌──────────────────────┐         ┌──────────────────────────────────┐
-│  Source Environment  │         │  Target Environment (Azure)      │
-│                      │         │                                  │
-│  IBM Power (OS/400)  │  ───►   │  Linux x86 Container on AKS     │
-│  IBM XL C/C++        │  code   │  GCC / Clang (C++20)             │
-│  Big-Endian          │  refactor│  Little-Endian                   │
-│  EBCDIC              │         │  UTF-8                           │
-└──────────────────────┘         └──────────────────────────────────┘
-```
+![Architecture diagram](../images/Code-refactor-diagram.jpg)
 
 ### Dataflow
 
@@ -238,9 +229,7 @@ directly.
 
 ### Example: Before and After
 
-The complete, compilable source files are in [`src/pos_transaction.cpp`](../src/pos_transaction.cpp) (legacy) and [`src/pos_transaction_x86.cpp`](../src/pos_transaction_x86.cpp) (modernized). The simplified pattern below shows the core issue and fix.
-
-**Legacy Code Pattern (Big-Endian Assumption) — see [`pos_transaction.cpp`](../src/pos_transaction.cpp):**
+**Legacy Code Pattern (Big-Endian Assumption):**
 
 ```cpp
 #include <cstring>
@@ -260,7 +249,7 @@ void processBuffer(char* rawInput) {
 }
 ```
 
-**Refactored Code (Portable, Cross-Platform) — see [`pos_transaction_x86.cpp`](../src/pos_transaction_x86.cpp):**
+**Refactored Code (Portable, Cross-Platform):**
 
 ```cpp
 #include <cstring>
@@ -290,7 +279,7 @@ void processBuffer(char* rawInput) {
 
 ### Output: Before and After
 
-**Legacy code ([`pos_transaction.cpp`](../src/pos_transaction.cpp)) — demonstrates the bug on x86:**
+**Legacy code (demonstrates the bug on x86):**
 
 ```bash
 ./pos_legacy
@@ -304,7 +293,7 @@ Pump       : 1792           ← WRONG (should be 7)
 Card       : VISA
 ```
 
-**Modernized code ([`pos_transaction_x86.cpp`](../src/pos_transaction_x86.cpp)) — correct on all platforms:**
+**Modernized code (correct on all platforms):**
 
 ```bash
 ./pos_modern
