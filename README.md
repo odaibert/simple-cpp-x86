@@ -15,7 +15,8 @@ C++ code written for IBM Power (OS/400, IBM i) stores multi-byte integers in **B
 ├── docs/
 │   ├── modernizing-big-endian-cpp-for-azure.md  # Solution guide
 │   ├── copilot-modernization-guide.md           # Step-by-step Copilot walkthrough
-│   └── copilot-prompts.md                       # Ready-to-use Copilot prompts
+│   ├── copilot-prompts.md                       # Ready-to-use Copilot prompts
+│   └── replication-task-plan.md                 # Tasks to replicate this solution
 └── src/
     ├── pos_transaction.cpp                      # BEFORE — legacy OS/400 (buggy on x86)
     └── pos_transaction_x86.cpp                  # AFTER  — portable code (correct)
@@ -88,6 +89,7 @@ Card       : VISA
 | [Solution Guide](docs/modernizing-big-endian-cpp-for-azure.md) | Endianness, architecture differences, C++ modernization workflow, Azure deployment options, Well-Architected considerations, and assessment checklist. |
 | [Copilot Modernization Guide](docs/copilot-modernization-guide.md) | Problem statement, the Copilot prompt, before/after code walkthrough, and gotchas (COMP-3, EBCDIC, struct padding). |
 | [Copilot Prompts](docs/copilot-prompts.md) | Copy-paste prompts for endianness refactoring, code explanation, and EBCDIC-to-UTF-8. |
+| [Replication Task Plan](docs/replication-task-plan.md) | Step-by-step tasks with Copilot prompts to reproduce this entire solution from scratch. |
 
 ## References
 
