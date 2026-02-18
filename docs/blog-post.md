@@ -264,6 +264,36 @@ void processBuffer(char* rawInput) {
 
 > **Key Insight:** The `if constexpr` check is evaluated at compile time, so there is **zero runtime overhead** on Little-Endian systems. The compiler simply includes the swap instructions unconditionally.
 
+### Output: Before and After
+
+**Legacy code (demonstrates the bug on x86):**
+
+```bash
+./pos_legacy
+```
+
+```
+Txn ID     : 16777216       ← WRONG (should be 1)
+Amount ($) : 2.28295e+07    ← WRONG (should be 50)
+Store      : 25600          ← WRONG (should be 100)
+Pump       : 1792           ← WRONG (should be 7)
+Card       : VISA
+```
+
+**Modernized code (correct on all platforms):**
+
+```bash
+./pos_modern
+```
+
+```
+Txn ID     : 1
+Amount ($) : 50
+Store      : 100
+Pump       : 7
+Card       : VISA
+```
+
 ---
 
 ## Section 6: Deploying Modernized C++ on Azure
