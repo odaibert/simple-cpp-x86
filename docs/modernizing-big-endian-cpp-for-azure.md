@@ -1,5 +1,3 @@
-~# Solution Guide: Modernizing Big-Endian C++ Workloads for Azure
-
 ## Overview
 
 Migrating mission-critical applications from legacy midrange or mainframe systems to the cloud is rarely a simple "lift and shift" operation. It involves a fundamental change in underlying infrastructure, operating paradigms, and—most critically—how the computer interprets raw data.
